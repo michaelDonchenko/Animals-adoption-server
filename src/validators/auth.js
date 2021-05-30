@@ -1,5 +1,5 @@
 const { check } = require('express-validator')
-const db = require('../db')
+const { User } = require('../models')
 const { compare } = require('bcryptjs')
 
 //password
@@ -14,11 +14,9 @@ const email = check('email')
 
 //check if email exists
 const emailExists = check('email').custom(async (value) => {
-  const { rows } = await db.query('SELECT * from users WHERE email = $1', [
-    value,
-  ])
+  const user = await User.findOne({ where: { email: value } })
 
-  if (rows.length) {
+  if (user) {
     throw new Error('האימייל כבר קיים במערכת.')
   }
 })
@@ -26,21 +24,22 @@ const emailExists = check('email').custom(async (value) => {
 //check if email and password are correct
 const currectEmailAndPassowrd = check('email').custom(
   async (value, { req }) => {
-    const { rows } = await db.query('SELECT * from users WHERE email = $1', [
-      value,
-    ])
-
-    if (!rows.length) {
-      throw new Error('האימייל לא קיים במערכת, נסה שנית')
+    const { dataValues } = await User.findOne({ where: { email: value } })
+    if (!dataValues) {
+      throw new Error('האימייל לא קיים במערכת.')
     }
 
-    req.user = rows[0]
+    //set user as dataValues
+    const user = dataValues
 
-    const currectPassword = await compare(req.body.password, req.user.password)
+    const currectPassword = await compare(req.body.password, user.password)
 
     if (!currectPassword) {
       throw new Error('הסיסמה שגוייה.')
     }
+
+    //pass the user as req.user
+    req.user = user
   }
 )
 

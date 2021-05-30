@@ -1,4 +1,4 @@
-const db = require('../db')
+const { User } = require('../models')
 const { hash } = require('bcryptjs')
 const { sign } = require('jsonwebtoken')
 const { SECRET } = require('../constants')
@@ -9,10 +9,7 @@ exports.register = async (req, res) => {
   try {
     const hashedPassword = await hash(password, 10)
 
-    await db.query(
-      'INSERT INTO users(email, password) VALUES ($1, $2) RETURNING *',
-      [email, hashedPassword]
-    )
+    await User.create({ email, password: hashedPassword })
 
     return res.status(201).json({
       success: true,
@@ -29,8 +26,8 @@ exports.register = async (req, res) => {
 
 //login
 exports.login = async (req, res) => {
-  const { id, email } = req.user
-  const payload = { id, email }
+  const { id, email, role } = req.user
+  const payload = { id, email, role }
 
   try {
     const token = await sign(payload, SECRET)
@@ -61,6 +58,28 @@ exports.logout = async (req, res) => {
         message: 'ההתנתקות בוצעה בהצלחה.',
         user: null,
       })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred',
+    })
+  }
+}
+
+exports.getUsers = async (req, res) => {
+  try {
+    let { limit, page } = req.query
+    page = Number(page) || 1
+    limit = Number(limit) || 5
+    let offset = page * limit - limit
+
+    const users = await User.findAndCountAll({ limit, offset })
+
+    return res.status(200).json({
+      users,
+      success: true,
+    })
   } catch (error) {
     console.log(error.message)
     res.status(500).json({
