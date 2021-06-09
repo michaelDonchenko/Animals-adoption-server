@@ -13,7 +13,8 @@ exports.register = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: 'ההרשמה בוצעה בהצלחה, כעט ניתן להתחבר לאתר עם האימייל והסיסמה.',
+      message:
+        'The registration was succefull, you may logoin with your credentials',
     })
   } catch (error) {
     console.log(error.message)
@@ -55,7 +56,7 @@ exports.logout = async (req, res) => {
       })
       .json({
         success: true,
-        message: 'ההתנתקות בוצעה בהצלחה.',
+        message: 'Logout was succefull',
         user: null,
       })
   } catch (error) {

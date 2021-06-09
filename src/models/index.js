@@ -1,6 +1,6 @@
 const sequelize = require('../db')
-const { DataTypes, ENUM, BOOLEAN, UUIDV4 } = require('sequelize')
-const { STRING, INTEGER, TEXT, UUID } = DataTypes
+const { DataTypes, ENUM, BOOLEAN } = require('sequelize')
+const { STRING, INTEGER, TEXT } = DataTypes
 
 //user model
 const User = sequelize.define('user', {
@@ -31,7 +31,7 @@ const Post = sequelize.define('post', {
 const Image = sequelize.define('image', {
   id: { type: INTEGER, primaryKey: true, autoIncrement: true },
   url: { type: STRING, allowNull: false },
-  public_id: { type: UUID, defaultValue: UUIDV4 },
+  publicId: { type: STRING, allowNull: false },
 })
 
 //relations

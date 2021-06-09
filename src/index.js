@@ -10,7 +10,7 @@ const sequelize = require('./db')
 require('./middlewares/passport-middleware')
 
 //init middlewares
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 app.use(cors({ origin: CLIENT_URL, credentials: true }))
 app.use(cookieParser())
 app.use(passport.initialize())
@@ -18,10 +18,12 @@ app.use(passport.initialize())
 //import routes
 const authRoutes = require('./routes/auth')
 const postsRoutes = require('./routes/posts')
+const cloudinaryRoutes = require('./routes/cloudinary')
 
 //use routes
 app.use('/api', authRoutes)
 app.use('/api', postsRoutes)
+app.use('/api', cloudinaryRoutes)
 
 //app start
 const appStart = async () => {

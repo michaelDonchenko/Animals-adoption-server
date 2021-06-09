@@ -4,42 +4,42 @@ const { compare } = require('bcryptjs')
 
 //password
 const password = check('password')
-  .isLength({ min: 8, max: 15 })
-  .withMessage('הסיסמה צריכה להיות בין 8 ל15 תווים.')
+  .isLength({ min: 6, max: 15 })
+  .withMessage('Password has to be between 6 and 15 characters.')
 
 //email
 const email = check('email')
   .isEmail()
-  .withMessage('אנה הכנס כתובת אימייל תקינה.')
+  .withMessage('Please provide a valid email')
 
 //check if email exists
 const emailExists = check('email').custom(async (value) => {
   const user = await User.findOne({ where: { email: value } })
 
   if (user) {
-    throw new Error('האימייל כבר קיים במערכת.')
+    throw new Error('The email already exists, please choose a diffrent one.')
   }
 })
 
 //check if email and password are correct
 const currectEmailAndPassowrd = check('email').custom(
   async (value, { req }) => {
-    const { dataValues } = await User.findOne({ where: { email: value } })
-    if (!dataValues) {
-      throw new Error('האימייל לא קיים במערכת.')
+    const user = await User.findOne({ where: { email: value } })
+    if (!user) {
+      throw new Error('No user with such email.')
     }
 
-    //set user as dataValues
-    const user = dataValues
-
-    const currectPassword = await compare(req.body.password, user.password)
+    const currectPassword = await compare(
+      req.body.password,
+      user.dataValues.password
+    )
 
     if (!currectPassword) {
-      throw new Error('הסיסמה שגוייה.')
+      throw new Error('Wrong credentials.')
     }
 
     //pass the user as req.user
-    req.user = user
+    req.user = user.dataValues
   }
 )
 
