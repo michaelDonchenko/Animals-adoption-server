@@ -1,5 +1,18 @@
 const { Post, Image } = require('../models')
 const { Op } = require('sequelize')
+const cloudinary = require('cloudinary')
+const {
+  CLOUDINARY_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
+} = require('../constants')
+
+//cloudinary config
+cloudinary.config({
+  cloud_name: CLOUDINARY_NAME,
+  api_key: CLOUDINARY_API_KEY,
+  api_secret: CLOUDINARY_API_SECRET,
+})
 
 exports.createPost = async (req, res) => {
   let userId = req.user.id
@@ -20,10 +33,27 @@ exports.createPost = async (req, res) => {
 }
 
 exports.getPosts = async (req, res) => {
-  let { page, limit, type, gender, adopted, location, size, age } = req.query
+  let { page, limit, type, gender, adopted, location, size, age, order } =
+    req.query
   page = Number(page) || 1
   limit = Number(limit) || 10
   let offset = page * limit - limit
+
+  let orderQuery = ['createdAt', 'DESC']
+
+  if (order) {
+    order === 'createdAt desc'
+      ? (orderQuery = ['createdAt', 'DESC'])
+      : order === 'createdAt asc'
+      ? (orderQuery = ['createdAt', 'ASC'])
+      : order === 'age desc'
+      ? (orderQuery = ['age', 'DESC'])
+      : order === 'age asc'
+      ? (orderQuery = ['age', 'ASC'])
+      : order === 'name asc'
+      ? (orderQuery = ['name', 'ASC'])
+      : (orderQuery = ['createdAt', 'DESC'])
+  }
 
   let queryOBJ = {
     type: type ? type : ['cat', 'dog'],
@@ -47,7 +77,7 @@ exports.getPosts = async (req, res) => {
 
   try {
     const posts = await Post.findAndCountAll({
-      order: [['createdAt', 'DESC']],
+      order: [orderQuery],
       limit,
       offset,
       include: Image,
@@ -133,6 +163,56 @@ exports.updatePost = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message,
+    })
+  }
+}
+
+exports.deletePost = async (req, res) => {
+  const { postId } = req.params
+
+  try {
+    const images = await Image.findAll({
+      where: {
+        postId,
+      },
+    })
+
+    let urls = []
+
+    images.map((img) => urls.push(img.dataValues.publicId))
+
+    if (urls.length > 0) {
+      for (let i = 0; i < urls.length; i++) {
+        cloudinary.uploader.destroy(urls[i], async ({ result }) => {
+          if (result !== 'ok') {
+            return res
+              .status(400)
+              .json({ message: 'Error could not delete the post' })
+          }
+        })
+      }
+    }
+
+    await Image.destroy({
+      where: {
+        postId,
+      },
+    })
+
+    await Post.destroy({
+      where: {
+        id: postId,
+      },
+    })
+
+    return res
+      .status(200)
+      .json({ success: true, message: 'Post deleted succefully' })
+  } catch (error) {
+    console.log(error.message)
+    res.status(500).json({
+      success: false,
+      message: 'An error occurred',
     })
   }
 }

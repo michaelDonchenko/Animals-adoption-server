@@ -32,8 +32,13 @@ const appStart = async () => {
       console.log(`The app is running at http://localhost:${PORT}`)
     })
     //database connection
-    await sequelize.authenticate()
-    await sequelize.sync()
+    try {
+      await sequelize.authenticate()
+      await sequelize.sync()
+      console.log('Connection has been established successfully.')
+    } catch (error) {
+      console.log(error)
+    }
   } catch (error) {
     console.log(`Error: ${error.message}`)
   }
